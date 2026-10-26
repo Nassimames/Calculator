@@ -1,120 +1,365 @@
-/* Luna mascot container */
-.luna-container {
+
+/* =========================================
+   LUNA — RESPONSIVE MASCOT
+   ========================================= */
+
+.luna-section {
     position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 4px 12px 10px;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.luna-section::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 180px;
+    height: 130px;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: radial-gradient(
+        ellipse,
+        rgba(151, 130, 255, 0.16),
+        transparent 72%
+    );
+    pointer-events: none;
+}
+
+.luna-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 3px;
     width: 100%;
-    margin: 12px auto;
-    z-index: 2;
+    max-width: 250px;
+    margin: 0 auto;
 }
 
-/* Luna's speech bubble */
+/* Speech bubble */
+
 .luna-message {
-    max-width: 220px;
-    padding: 9px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.75);
-    border-radius: 16px 16px 16px 5px;
-    background: rgba(255, 255, 255, 0.8);
-    color: #62596f;
-    font-size: 12px;
-    font-weight: 500;
-    text-align: center;
-    box-shadow: 0 5px 18px rgba(70, 60, 90, 0.08);
-    backdrop-filter: blur(8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-/* Character */
-.luna-character {
-    width: 120px;
-    height: 120px;
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    transform-origin: center bottom;
-    animation: luna-float 3s ease-in-out infinite;
+
+    width: fit-content;
+    max-width: 100%;
+    min-height: 30px;
+    padding: 6px 13px;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px 14px 14px 5px;
+
+    background: rgba(255, 255, 255, 0.94);
+    color: #62596f;
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+
+    transition:
+        opacity 180ms ease,
+        transform 180ms ease;
 }
 
+.luna-message::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -5px;
+
+    width: 8px;
+    height: 8px;
+
+    background: inherit;
+    border-right: inherit;
+    border-bottom: inherit;
+
+    transform: translateX(-50%) rotate(45deg);
+}
+
+/* Character */
+
+.luna-character {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: clamp(100px, 12vw, 142px);
+    aspect-ratio: 1;
+    height: auto;
+    flex: 0 0 auto;
+
+    transform-origin: center 80%;
+    animation: luna-float 3.4s ease-in-out infinite;
+
+    will-change: transform;
+}
+
+/* Ground shadow */
+
+.luna-character::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 20%;
+    bottom: 3px;
+
+    width: 60%;
+    height: 8px;
+
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.15);
+    filter: blur(6px);
+
+    animation: luna-shadow 3.4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+/* Image */
+
 .luna-image {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 8px 10px rgba(70, 60, 90, 0.12));
+    object-position: center;
+
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.15));
+
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
-/* Floating animation */
+/* Caption */
+
+.luna-caption {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    margin: 0;
+    color: rgba(210, 207, 235, 0.7);
+
+    font-family: "DM Sans", sans-serif;
+    font-size: 9px;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.luna-caption span:first-child,
+.luna-caption span:last-child {
+    color: #b7a7ff;
+}
+
+/* Idle */
+
 @keyframes luna-float {
     0%, 100% {
-        transform: translateY(0) rotate(-2deg);
+        transform: translateY(0) rotate(-1deg);
     }
 
     50% {
-        transform: translateY(-7px) rotate(2deg);
+        transform: translateY(-5px) rotate(1deg);
     }
 }
 
-/* Happy reaction */
+@keyframes luna-shadow {
+    0%, 100% {
+        transform: scaleX(1);
+        opacity: 0.65;
+    }
+
+    50% {
+        transform: scaleX(0.8);
+        opacity: 0.35;
+    }
+}
+
+/* Happy */
+
 .luna-character.is-happy {
-    animation: luna-happy 0.55s ease-in-out;
+    animation: luna-happy 650ms ease-in-out;
 }
 
 @keyframes luna-happy {
     0%, 100% {
-        transform: translateY(0) scale(1);
+        transform: translateY(0) scale(1) rotate(0);
     }
 
     35% {
-        transform: translateY(-15px) scale(1.08) rotate(-5deg);
+        transform: translateY(-12px) scale(1.06) rotate(-5deg);
     }
 
     65% {
-        transform: translateY(-5px) scale(1.04) rotate(5deg);
+        transform: translateY(-4px) scale(1.03) rotate(5deg);
     }
 }
 
-/* Surprised reaction */
+/* Surprised */
+
 .luna-character.is-surprised {
-    animation: luna-surprised 0.4s ease-in-out;
+    animation: luna-surprised 500ms ease-in-out;
 }
 
 @keyframes luna-surprised {
     0%, 100% {
-        transform: scale(1);
+        transform: scale(1) rotate(0);
     }
 
-    40% {
-        transform: scale(1.12) rotate(4deg);
+    35% {
+        transform: scale(1.08) rotate(4deg);
     }
 
-    70% {
-        transform: scale(0.96) rotate(-3deg);
+    65% {
+        transform: scale(0.97) rotate(-3deg);
     }
 }
 
-/* Thinking reaction */
+/* Thinking */
+
 .luna-character.is-thinking {
-    animation: luna-thinking 1s ease-in-out infinite;
+    animation: luna-thinking 1.4s ease-in-out infinite;
 }
 
 @keyframes luna-thinking {
     0%, 100% {
-        transform: rotate(0);
+        transform: translateY(0) rotate(0);
     }
 
     50% {
-        transform: rotate(-5deg) translateY(-3px);
+        transform: translateY(-3px) rotate(-4deg);
     }
 }
 
-/* Reduced motion accessibility */
+/* Error */
+
+.luna-character.is-error {
+    animation: luna-error 400ms ease-in-out 2;
+}
+
+@keyframes luna-error {
+    0%, 100% {
+        transform: translateX(0) rotate(0);
+    }
+
+    25% {
+        transform: translateX(-4px) rotate(-3deg);
+    }
+
+    75% {
+        transform: translateX(4px) rotate(3deg);
+    }
+}
+
+/* Typing */
+
+.luna-character.is-typing {
+    animation: luna-typing 800ms ease-in-out infinite;
+}
+
+@keyframes luna-typing {
+    0%, 100% {
+        transform: translateY(0) rotate(0);
+    }
+
+    50% {
+        transform: translateY(-3px) rotate(2deg);
+    }
+}
+
+/* Love */
+
+.luna-character.is-love {
+    animation: luna-happy 700ms ease-in-out;
+}
+
+/* Clear */
+
+.luna-character.is-clear {
+    animation: luna-surprised 500ms ease-in-out;
+}
+
+/* Theme */
+
+[data-theme="light"] .luna-message {
+    background: rgba(255, 255, 255, 0.97);
+    color: #62596f;
+}
+
+[data-theme="dark"] .luna-message {
+    background: rgba(35, 35, 54, 0.96);
+    color: #eeecff;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive */
+
+@media (min-width: 1000px) {
+    .luna-character {
+        width: clamp(120px, 12vw, 150px);
+    }
+}
+
+@media (max-width: 768px) {
+    .luna-section {
+        padding: 3px 8px 8px;
+    }
+
+    .luna-character {
+        width: clamp(95px, 22vw, 125px);
+    }
+
+    .luna-caption {
+        font-size: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .luna-character {
+        width: 105px;
+    }
+
+    .luna-message {
+        max-width: 240px;
+        font-size: 10px;
+        padding: 6px 10px;
+    }
+
+    .luna-section::before {
+        width: 135px;
+        height: 100px;
+    }
+}
+
+/* Accessibility */
+
 @media (prefers-reduced-motion: reduce) {
     .luna-character,
+    .luna-character::after,
     .luna-character.is-happy,
     .luna-character.is-surprised,
-    .luna-character.is-thinking {
-        animation: none;
+    .luna-character.is-thinking,
+    .luna-character.is-error,
+    .luna-character.is-typing,
+    .luna-character.is-love,
+    .luna-character.is-clear {
+        animation: none !important;
     }
 
     .luna-message {
@@ -122,15 +367,3 @@
     }
 }
 
-/* Responsive sizing */
-@media (max-width: 480px) {
-    .luna-character {
-        width: 90px;
-        height: 90px;
-    }
-
-    .luna-message {
-        font-size: 11px;
-        max-width: 190px;
-    }
-}

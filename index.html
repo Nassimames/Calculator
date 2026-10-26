@@ -27,6 +27,9 @@
   <script src="./js/mascot.js" defer></script>
 </head>
 
+
+
+
 <body>
 
   <!-- Ambient background -->
@@ -190,51 +193,45 @@
         <!-- =========================
              LUNA MASCOT
         ========================== -->
-        <section
-          class="luna-section"
-          aria-label="Luna, your calculator companion"
-        >
+   
+<!-- LUNA MASCOT -->
+<section class="luna-section" aria-label="Luna, your calculator companion">
+  <div class="luna-container" id="luna">
 
-          <div class="luna-container" id="luna">
+    <div
+      class="luna-message"
+      id="luna-message"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      Hi! I'm Luna. Let's calculate together!
+    </div>
 
-            <!-- Speech bubble -->
-            <div
-              class="luna-message"
-              id="luna-message"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              Hi! I'm Luna. Let's calculate together!
-            </div>
+    <div
+      class="luna-character"
+      id="luna-character"
+      data-state="idle"
+    >
+      <img
+        src="./assets/mascot/luna-idle.png"
+        alt="Luna, an adorable gray cat with white stripes"
+        class="luna-image"
+        id="luna-image"
+        width="160"
+        height="160"
+      >
+    </div>
 
-            <!-- Cat mascot -->
-            <div
-              class="luna-character"
-              id="luna-character"
-              data-state="idle"
-            >
+    <p class="luna-caption" id="luna-caption">
+      <span aria-hidden="true">✦</span>
+      <span>Your little math companion</span>
+      <span aria-hidden="true">✦</span>
+    </p>
 
-              <img
-                src="./assets/mascot/luna-idle.png"
-                alt="Luna, an adorable gray cat with white stripes"
-                class="luna-image"
-                id="luna-image"
-                width="160"
-                height="160"
-              >
+  </div>
+</section>
 
-            </div>
-
-            <p class="luna-caption">
-              <span class="luna-caption__sparkle" aria-hidden="true">✦</span>
-              Your little math companion
-              <span class="luna-caption__sparkle" aria-hidden="true">✦</span>
-            </p>
-
-          </div>
-
-        </section>
 
 
         <!-- =========================

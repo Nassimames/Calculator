@@ -1,351 +1,692 @@
-(() => {
+
+
+document.addEventListener("DOMContentLoaded", () => {
   "use strict";
 
-  const expressionEl = document.getElementById("expression");
-  const resultEl = document.getElementById("result");
-  const messageEl = document.getElementById("message");
+  // =========================================
+  // DOM ELEMENTS
+  // =========================================
+
+  const expressionElement = document.getElementById("expression");
+  const resultElement = document.getElementById("result");
+  const messageElement = document.getElementById("message");
   const keypad = document.getElementById("keypad");
-  const themeToggle = document.getElementById("theme-toggle");
   const copyButton = document.getElementById("copy-result");
+  const themeToggle = document.getElementById("theme-toggle");
   const toast = document.getElementById("toast");
 
-  const state = {
-    expression: "",
-    result: "0",
-    justCalculated: false,
-    error: false,
-    lastAnswer: 0
-  };
-
-  let toastTimer;
-  const operators = ["+", "-", "*", "/"];
-  const prettyOperators = { "*": "×", "/": "÷", "-": "−", "+": "+" };
-
-  function prettyExpression(expression) {
-    return expression.replace(/[+\-*/]/g, (operator) => ` ${prettyOperators[operator]} `);
+  if (
+    !expressionElement ||
+    !resultElement ||
+    !messageElement ||
+    !keypad
+  ) {
+    console.error(
+      "Calculator initialization failed: required HTML elements are missing."
+    );
+    return;
   }
 
-  function formatNumber(number) {
-    if (!Number.isFinite(number)) throw new Error("Result is out of range");
-    if (Object.is(number, -0)) number = 0;
-    // Round display noise without pretending floating-point math is infinitely precise.
-    const rounded = Number.parseFloat(number.toPrecision(12));
-    return new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: 10,
-      useGrouping: true
-    }).format(rounded);
+  // =========================================
+  // CALCULATOR STATE
+  // =========================================
+
+  let currentInput = "0";
+  let firstOperand = null;
+  let operator = null;
+  let waitingForSecondOperand = false;
+  let lastResult = null;
+  let expressionText = "";
+  let hasError = false;
+  let justCalculated = false;
+  let toastTimeout = null;
+
+  const MAX_INPUT_LENGTH = 15;
+
+  // =========================================
+  // LUNA INTEGRATION
+  // =========================================
+
+  /**
+   * Safely asks mascot.js to update Luna.
+   * If mascot.js is missing, the calculator still works.
+   */
+  function reactToLuna(state) {
+    if (typeof window.setLunaExpression === "function") {
+      window.setLunaExpression(state);
+    } else {
+      console.warn(
+        `Luna reaction "${state}" unavailable. Check js/mascot.js.`
+      );
+    }
   }
 
-  function rawNumber(number) {
-    if (!Number.isFinite(number)) throw new Error("Result is out of range");
-    return String(Number.parseFloat(number.toPrecision(12)));
+  // =========================================
+  // DISPLAY HELPERS
+  // =========================================
+
+  function formatNumber(value) {
+    if (!Number.isFinite(value)) {
+      return "Error";
+    }
+
+    if (Object.is(value, -0)) {
+      value = 0;
+    }
+
+    const rounded = Number.parseFloat(value.toPrecision(12));
+
+    return String(rounded);
   }
 
-  function setMessage(message = "Ready when you are.", isError = false) {
-    messageEl.textContent = message;
-    messageEl.classList.toggle("is-error", isError);
+  function updateDisplay() {
+    expressionElement.textContent = expressionText || "\u00A0";
+
+    resultElement.textContent = currentInput;
+
+    resultElement.classList.toggle("is-error", hasError);
+    messageElement.classList.toggle("is-error", hasError);
+
+    updateOperatorHighlight();
   }
 
-  function render() {
-    expressionEl.textContent = state.expression ? prettyExpression(state.expression) : "\u00a0";
-    resultEl.textContent = state.result;
-    resultEl.classList.toggle("is-error", state.error);
-    if (state.expression.length > 28) expressionEl.style.fontSize = "14px";
-    else expressionEl.style.fontSize = "";
-    updateSelectedOperator();
-  }
-
-  function updateSelectedOperator() {
-    keypad.querySelectorAll("[data-operator]").forEach((button) => {
-      const isSelected = state.expression && operators.includes(state.expression.at(-1)) &&
-        button.dataset.operator === state.expression.at(-1);
-      button.classList.toggle("is-selected", Boolean(isSelected));
+  function updateOperatorHighlight() {
+    document.querySelectorAll("[data-operator]").forEach((button) => {
+      button.classList.toggle(
+        "is-selected",
+        button.dataset.operator === operator
+      );
     });
   }
 
-  // A small recursive-descent parser: only numbers and the four operators are accepted.
-  // This deliberately avoids eval() and Function(), so user input is never executed as code.
-  function evaluateExpression(source) {
-    const input = source.replace(/\s+/g, "");
-    if (!input) throw new Error("Enter an expression");
-    let index = 0;
-
-    function parseExpression() {
-      let value = parseTerm();
-      while (input[index] === "+" || input[index] === "-") {
-        const operator = input[index++];
-        const right = parseTerm();
-        value = operator === "+" ? value + right : value - right;
-      }
-      return value;
-    }
-
-    function parseTerm() {
-      let value = parseUnary();
-      while (input[index] === "*" || input[index] === "/") {
-        const operator = input[index++];
-        const right = parseUnary();
-        if (operator === "/" && right === 0) throw new Error("Cannot divide by zero");
-        value = operator === "*" ? value * right : value / right;
-      }
-      return value;
-    }
-
-    function parseUnary() {
-      if (input[index] === "+") { index++; return parseUnary(); }
-      if (input[index] === "-") { index++; return -parseUnary(); }
-      return parseNumber();
-    }
-
-    function parseNumber() {
-      const start = index;
-      let dots = 0;
-      while (index < input.length && /[0-9.]/.test(input[index])) {
-        if (input[index] === ".") dots++;
-        if (dots > 1) throw new Error("Invalid decimal number");
-        index++;
-      }
-      if (start === index || input.slice(start, index) === ".") {
-        throw new Error("Incomplete expression");
-      }
-      const value = Number(input.slice(start, index));
-      if (!Number.isFinite(value)) throw new Error("Invalid number");
-      return value;
-    }
-
-    const result = parseExpression();
-    if (index !== input.length) throw new Error("Check your expression");
-    if (!Number.isFinite(result)) throw new Error("Result is out of range");
-    return result;
+  function setMessage(text, isError = false) {
+    messageElement.textContent = text;
+    messageElement.classList.toggle("is-error", isError);
   }
 
-  function calculatePreview() {
-    if (!state.expression || operators.includes(state.expression.at(-1)) || state.expression.at(-1) === ".") {
-      state.result = state.expression ? "…" : "0";
-      state.error = false;
-      setMessage(state.expression ? "Keep going…" : "Ready when you are.");
+  // =========================================
+  // TOAST NOTIFICATIONS
+  // =========================================
+
+  function showToast(text) {
+    if (!toast) {
       return;
     }
-    try {
-      const value = evaluateExpression(state.expression);
-      state.result = formatNumber(value);
-      state.error = false;
-      setMessage("Live result");
-    } catch (error) {
-      state.result = "—";
-      state.error = true;
-      setMessage(error.message || "Invalid expression", true);
-    }
+
+    toast.textContent = text;
+    toast.classList.add("is-visible");
+
+    clearTimeout(toastTimeout);
+
+    toastTimeout = setTimeout(() => {
+      toast.classList.remove("is-visible");
+    }, 2200);
   }
 
-  function resetForNewInput() {
-    if (state.justCalculated || state.error) {
-      state.expression = "";
-      state.result = "0";
-      state.error = false;
-      state.justCalculated = false;
-    }
+  // =========================================
+  // ERROR HANDLING
+  // =========================================
+
+  function showError(text = "Something went wrong.") {
+    hasError = true;
+    currentInput = "Error";
+    lastResult = null;
+    waitingForSecondOperand = false;
+    justCalculated = false;
+
+    updateDisplay();
+    setMessage(text, true);
+    reactToLuna("error");
   }
 
-  function inputDigit(digit) {
-    resetForNewInput();
-    const lastNumber = state.expression.split(/[+\-*/]/).at(-1);
-    if (lastNumber === "0") {
-      state.expression = state.expression.slice(0, -1) + digit;
-    } else {
-      state.expression += digit;
-    }
-    calculatePreview();
-    render();
-  }
-
-  function inputDecimal() {
-    resetForNewInput();
-    const lastNumber = state.expression.split(/[+\-*/]/).at(-1);
-    if (lastNumber.includes(".")) return;
-    if (!lastNumber || operators.includes(state.expression.at(-1))) state.expression += "0";
-    state.expression += ".";
-    calculatePreview();
-    render();
-  }
-
-  function inputOperator(operator) {
-    if (!operators.includes(operator)) return;
-    if (state.error) {
-      state.expression = "";
-      state.result = "0";
-      state.error = false;
-    }
-    if (!state.expression) {
-      if (operator === "-") state.expression = "-";
-      else return;
-    } else if (operators.includes(state.expression.at(-1))) {
-      if (operator === "-" && state.expression.at(-1) !== "-") {
-        state.expression += operator; // permit a negative right-hand operand, e.g. 8 × -2
-      } else {
-        state.expression = state.expression.slice(0, -1) + operator;
-      }
-    } else if (state.expression.at(-1) === ".") {
-      state.expression += "0" + operator;
-    } else {
-      state.expression += operator;
-    }
-    state.justCalculated = false;
-    calculatePreview();
-    render();
-  }
+  // =========================================
+  // RESET CALCULATOR
+  // =========================================
 
   function clearCalculator() {
-    state.expression = "";
-    state.result = "0";
-    state.justCalculated = false;
-    state.error = false;
-    setMessage("Ready when you are.");
-    render();
+    currentInput = "0";
+    firstOperand = null;
+    operator = null;
+    waitingForSecondOperand = false;
+    lastResult = null;
+    expressionText = "";
+    hasError = false;
+    justCalculated = false;
+
+    updateDisplay();
+    setMessage("Fresh start. Ready when you are.");
+
+    reactToLuna("clear");
   }
 
+  // =========================================
+  // INPUT DIGITS
+  // =========================================
+
+  function inputDigit(digit) {
+    if (!/^\d$/.test(digit)) {
+      return;
+    }
+
+    if (hasError) {
+      clearCalculator();
+    }
+
+    if (justCalculated && !operator) {
+      currentInput = digit;
+      expressionText = "";
+      lastResult = null;
+      justCalculated = false;
+    } else if (waitingForSecondOperand) {
+      currentInput = digit;
+      waitingForSecondOperand = false;
+      justCalculated = false;
+    } else {
+      if (currentInput.replace("-", "").length >= MAX_INPUT_LENGTH) {
+        return;
+      }
+
+      currentInput =
+        currentInput === "0" ? digit : currentInput + digit;
+    }
+
+    setMessage("Ooh, what are we calculating?");
+    updateDisplay();
+
+    reactToLuna("typing");
+  }
+
+  // =========================================
+  // DECIMAL POINT
+  // =========================================
+
+  function inputDecimal() {
+    if (hasError) {
+      clearCalculator();
+    }
+
+    if (justCalculated && !operator) {
+      currentInput = "0.";
+      expressionText = "";
+      justCalculated = false;
+    } else if (waitingForSecondOperand) {
+      currentInput = "0.";
+      waitingForSecondOperand = false;
+    } else if (!currentInput.includes(".")) {
+      currentInput += ".";
+    } else {
+      return;
+    }
+
+    setMessage("A little precision!");
+    updateDisplay();
+
+    reactToLuna("typing");
+  }
+
+  // =========================================
+  // ARITHMETIC OPERATIONS
+  // =========================================
+
+  function calculate(a, b, operation) {
+    switch (operation) {
+      case "+":
+        return a + b;
+
+      case "-":
+        return a - b;
+
+      case "*":
+        return a * b;
+
+      case "/":
+        if (b === 0) {
+          return null;
+        }
+
+        return a / b;
+
+      default:
+        return null;
+    }
+  }
+
+  function operatorSymbol(operation) {
+    const symbols = {
+      "+": "+",
+      "-": "−",
+      "*": "×",
+      "/": "÷"
+    };
+
+    return symbols[operation] || operation;
+  }
+
+  function inputOperator(nextOperator) {
+    if (!["+", "-", "*", "/"].includes(nextOperator)) {
+      return;
+    }
+
+    if (hasError) {
+      clearCalculator();
+    }
+
+    const inputValue = Number(currentInput);
+
+    if (!Number.isFinite(inputValue)) {
+      showError("Please enter a valid number.");
+      return;
+    }
+
+    // If an operator was already selected, evaluate the previous pair.
+    if (operator && !waitingForSecondOperand) {
+      const result = calculate(
+        firstOperand,
+        inputValue,
+        operator
+      );
+
+      if (result === null || !Number.isFinite(result)) {
+        showError(
+          operator === "/" && inputValue === 0
+            ? "Oops! You can't divide by zero."
+            : "This calculation is not valid."
+        );
+        return;
+      }
+
+      currentInput = formatNumber(result);
+      firstOperand = result;
+    } else {
+      firstOperand = inputValue;
+    }
+
+    operator = nextOperator;
+    waitingForSecondOperand = true;
+    justCalculated = false;
+    lastResult = null;
+
+    expressionText =
+      `${formatNumber(firstOperand)} ${operatorSymbol(operator)}`;
+
+    updateDisplay();
+    setMessage("Choose the next number.");
+
+    reactToLuna("thinking");
+  }
+
+  // =========================================
+  // CALCULATE RESULT
+  // =========================================
+
+  function performCalculation() {
+    if (hasError) {
+      return;
+    }
+
+    // Nothing to calculate.
+    if (!operator || firstOperand === null) {
+      if (currentInput.includes(".")) {
+        currentInput = formatNumber(Number(currentInput));
+        updateDisplay();
+      }
+
+      setMessage("Ready for your next calculation.");
+      reactToLuna("idle");
+      return;
+    }
+
+    // Avoid calculating before the second operand exists.
+    if (waitingForSecondOperand) {
+      setMessage("Enter another number first.");
+      reactToLuna("thinking");
+      return;
+    }
+
+    const secondOperand = Number(currentInput);
+    const operation = operator;
+    const first = firstOperand;
+
+    const result = calculate(first, secondOperand, operation);
+
+    if (result === null || !Number.isFinite(result)) {
+      showError(
+        operation === "/" && secondOperand === 0
+          ? "Oops! You can't divide by zero."
+          : "This calculation is not valid."
+      );
+      return;
+    }
+
+    const formattedFirst = formatNumber(first);
+    const formattedSecond = formatNumber(secondOperand);
+    const formattedResult = formatNumber(result);
+
+    expressionText =
+      `${formattedFirst} ${operatorSymbol(operation)} ${formattedSecond}`;
+
+    currentInput = formattedResult;
+    lastResult = result;
+
+    firstOperand = null;
+    operator = null;
+    waitingForSecondOperand = false;
+    justCalculated = true;
+
+    updateDisplay();
+    setMessage("Yay! We did it!");
+
+    reactToLuna(
+      Math.abs(result) >= 1000000 ? "surprised" : "happy"
+    );
+  }
+
+  // =========================================
+  // DELETE LAST CHARACTER
+  // =========================================
+
   function deleteLastCharacter() {
-    if (state.justCalculated || state.error) {
+    if (hasError) {
       clearCalculator();
       return;
     }
-    state.expression = state.expression.slice(0, -1);
-    calculatePreview();
-    render();
-  }
 
-  function calculateResult() {
-    if (!state.expression) {
-      setMessage("Enter an expression first.");
+    if (justCalculated) {
+      currentInput = "0";
+      expressionText = "";
+      firstOperand = null;
+      operator = null;
+      justCalculated = false;
+      lastResult = null;
+
+      updateDisplay();
+      setMessage("Let's try another calculation.");
+      reactToLuna("typing");
       return;
     }
-    try {
-      const value = evaluateExpression(state.expression);
-      state.lastAnswer = value;
-      state.result = formatNumber(value);
-      state.expression = rawNumber(value);
-      state.justCalculated = true;
-      state.error = false;
-      setMessage("Calculation complete");
-    } catch (error) {
-      state.result = error.message === "Cannot divide by zero" ? "Not defined" : "Error";
-      state.error = true;
-      state.justCalculated = false;
-      setMessage(error.message || "Invalid expression", true);
+
+    if (waitingForSecondOperand) {
+      setMessage("Choose the next number.");
+      reactToLuna("thinking");
+      return;
     }
-    render();
+
+    if (currentInput.length <= 1 ||
+        (currentInput.length === 2 && currentInput.startsWith("-"))) {
+      currentInput = "0";
+    } else {
+      currentInput = currentInput.slice(0, -1);
+    }
+
+    updateDisplay();
+    setMessage("No worries, take your time.");
+    reactToLuna("typing");
   }
 
-  function currentValue() {
-    if (state.expression && !operators.includes(state.expression.at(-1)) && state.expression.at(-1) !== ".") {
-      try { return evaluateExpression(state.expression); } catch (_) { /* use visible result below */ }
-    }
-    return state.lastAnswer;
-  }
-
-  function applyPercent() {
-    if (!state.expression || state.error) return;
-    const match = state.expression.match(/(-?(?:\d+\.?\d*|\.\d+))$/);
-    if (!match) return;
-    const number = Number(match[1]);
-    const percentValue = rawNumber(number / 100);
-    state.expression = state.expression.slice(0, -match[1].length) + percentValue;
-    state.justCalculated = false;
-    calculatePreview();
-    render();
-  }
+  // =========================================
+  // CHANGE SIGN
+  // =========================================
 
   function toggleSign() {
-    if (!state.expression) {
-      state.expression = "-";
-      render();
+    if (hasError) {
+      clearCalculator();
+    }
+
+    if (Number(currentInput) === 0) {
       return;
     }
-    if (state.justCalculated) {
-      state.expression = rawNumber(-currentValue());
-      state.justCalculated = false;
-    } else {
-      const match = state.expression.match(/(-?(?:\d+\.?\d*|\.\d+))$/);
-      if (!match) {
-        if (operators.includes(state.expression.at(-1))) state.expression += "-";
-        else return;
-      } else {
-        const number = match[1];
-        const replacement = number.startsWith("-") ? number.slice(1) : `-${number}`;
-        state.expression = state.expression.slice(0, -number.length) + replacement;
-      }
+
+    currentInput = currentInput.startsWith("-")
+      ? currentInput.slice(1)
+      : `-${currentInput}`;
+
+    updateDisplay();
+    setMessage("Negative or positive? Your choice!");
+    reactToLuna("thinking");
+  }
+
+  // =========================================
+  // PERCENTAGE
+  // =========================================
+
+  function calculatePercent() {
+    if (hasError) {
+      clearCalculator();
     }
-    calculatePreview();
-    render();
-  }
 
-  function showToast(message) {
-    toast.textContent = message;
-    toast.classList.add("is-visible");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 1800);
-  }
+    const value = Number(currentInput);
 
-  async function copyResult() {
-    if (state.error || state.result === "…" || state.result === "—") {
-      showToast("No result to copy yet");
+    if (!Number.isFinite(value)) {
+      showError("Please enter a valid number.");
       return;
     }
-    try {
-      await navigator.clipboard.writeText(state.result.replace(/,/g, ""));
-      showToast("Result copied to clipboard");
-    } catch (_) {
-      showToast(`Result: ${state.result}`);
-    }
+
+    currentInput = formatNumber(value / 100);
+    justCalculated = false;
+
+    updateDisplay();
+    setMessage("Percentage calculated!");
+    reactToLuna("happy");
   }
+
+  // =========================================
+  // BUTTON ACTIONS
+  // =========================================
 
   function handleAction(action) {
     switch (action) {
-      case "clear": clearCalculator(); break;
-      case "delete": deleteLastCharacter(); break;
-      case "decimal": inputDecimal(); break;
-      case "equals": calculateResult(); break;
-      case "percent": applyPercent(); break;
-      case "sign": toggleSign(); break;
+      case "clear":
+        clearCalculator();
+        break;
+
+      case "delete":
+        deleteLastCharacter();
+        break;
+
+      case "decimal":
+        inputDecimal();
+        break;
+
+      case "equals":
+        performCalculation();
+        break;
+
+      case "sign":
+        toggleSign();
+        break;
+
+      case "percent":
+        calculatePercent();
+        break;
+
+      default:
+        console.warn("Unknown calculator action:", action);
     }
   }
 
+  // =========================================
+  // KEYPAD CLICK EVENTS
+  // =========================================
+
   keypad.addEventListener("click", (event) => {
     const button = event.target.closest("button");
-    if (!button) return;
-    if (button.dataset.digit !== undefined) inputDigit(button.dataset.digit);
-    else if (button.dataset.operator) inputOperator(button.dataset.operator);
-    else if (button.dataset.action) handleAction(button.dataset.action);
+
+    if (!button || !keypad.contains(button)) {
+      return;
+    }
+
+    button.classList.remove("is-pressed");
+    void button.offsetWidth;
+    button.classList.add("is-pressed");
+
+    setTimeout(() => {
+      button.classList.remove("is-pressed");
+    }, 140);
+
+    if (button.dataset.digit !== undefined) {
+      inputDigit(button.dataset.digit);
+      return;
+    }
+
+    if (button.dataset.operator !== undefined) {
+      inputOperator(button.dataset.operator);
+      return;
+    }
+
+    if (button.dataset.action !== undefined) {
+      handleAction(button.dataset.action);
+    }
   });
+
+  // =========================================
+  // KEYBOARD SUPPORT
+  // =========================================
 
   document.addEventListener("keydown", (event) => {
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
-    const { key } = event;
-    if (/^\d$/.test(key)) { event.preventDefault(); inputDigit(key); return; }
-    if (operators.includes(key)) { event.preventDefault(); inputOperator(key); return; }
-    if (key === ".") { event.preventDefault(); inputDecimal(); return; }
-    if (key === "Enter" || key === "=") { event.preventDefault(); calculateResult(); return; }
-    if (key === "Backspace") { event.preventDefault(); deleteLastCharacter(); return; }
-    if (key === "Escape" || key === "Delete") { event.preventDefault(); clearCalculator(); return; }
-    if (key === "%") { event.preventDefault(); applyPercent(); }
+    // Don't hijack keyboard input in text fields.
+    const target = event.target;
+
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      target?.isContentEditable
+    ) {
+      return;
+    }
+
+    const key = event.key;
+
+    if (/^\d$/.test(key)) {
+      event.preventDefault();
+      inputDigit(key);
+      return;
+    }
+
+    if (["+", "-", "*", "/"].includes(key)) {
+      event.preventDefault();
+      inputOperator(key);
+      return;
+    }
+
+    if (key === "." || key === ",") {
+      event.preventDefault();
+      inputDecimal();
+      return;
+    }
+
+    if (key === "Enter" || key === "=") {
+      event.preventDefault();
+      performCalculation();
+      return;
+    }
+
+    if (key === "Backspace") {
+      event.preventDefault();
+      deleteLastCharacter();
+      return;
+    }
+
+    if (key === "Escape" || key === "Delete") {
+      event.preventDefault();
+      clearCalculator();
+      return;
+    }
+
+    if (key === "%") {
+      event.preventDefault();
+      calculatePercent();
+    }
   });
 
-  themeToggle.addEventListener("click", () => {
-    const isLight = document.documentElement.dataset.theme !== "light";
-    document.documentElement.dataset.theme = isLight ? "light" : "dark";
-    themeToggle.setAttribute("aria-label", isLight ? "Switch to dark theme" : "Switch to light theme");
-    try { localStorage.setItem("calc-theme", isLight ? "light" : "dark"); } catch (_) {}
-  });
+  // =========================================
+  // COPY RESULT
+  // =========================================
 
-  copyButton.addEventListener("click", copyResult);
+  if (copyButton) {
+    copyButton.addEventListener("click", async () => {
+      if (hasError) {
+        showToast("There is no valid result to copy.");
+        reactToLuna("error");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(currentInput);
+        showToast(`Copied: ${currentInput}`);
+        setMessage("Copied! Nice and easy.");
+        reactToLuna("love");
+      } catch (error) {
+        console.error("Clipboard error:", error);
+        showToast("Unable to copy. Check your browser permissions.");
+      }
+    });
+  }
+
+  // =========================================
+  // LIGHT / DARK THEME
+  // =========================================
+
+  function applyTheme(theme) {
+    const normalizedTheme = theme === "light" ? "light" : "dark";
+
+    document.documentElement.dataset.theme = normalizedTheme;
+
+    if (themeToggle) {
+      const nextTheme =
+        normalizedTheme === "dark" ? "light" : "dark";
+
+      themeToggle.setAttribute(
+        "aria-label",
+        `Switch to ${nextTheme} theme`
+      );
+
+      themeToggle.setAttribute(
+        "title",
+        `Switch to ${nextTheme} theme`
+      );
+    }
+
+    try {
+      localStorage.setItem("luna-calculator-theme", normalizedTheme);
+    } catch (error) {
+      console.warn("Theme preference could not be saved.", error);
+    }
+  }
+
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const currentTheme =
+        document.documentElement.dataset.theme || "dark";
+
+      applyTheme(currentTheme === "dark" ? "light" : "dark");
+
+      reactToLuna("happy");
+    });
+  }
 
   try {
-    const savedTheme = localStorage.getItem("calc-theme");
-    if (savedTheme === "light") {
-      document.documentElement.dataset.theme = "light";
-      themeToggle.setAttribute("aria-label", "Switch to dark theme");
-    }
-  } catch (_) {}
+    const savedTheme = localStorage.getItem("luna-calculator-theme");
 
-  render();
-})();
+    if (savedTheme === "light" || savedTheme === "dark") {
+      applyTheme(savedTheme);
+    } else {
+      applyTheme("dark");
+    }
+  } catch {
+    applyTheme("dark");
+  }
+
+  // =========================================
+  // INITIALIZATION
+  // =========================================
+
+  updateDisplay();
+  setMessage("Ready when you are.");
+
+  // Set Luna's initial expression after mascot.js loads.
+  reactToLuna("idle");
+
+  console.info("Luna Calculator initialized successfully.");
+});
+
