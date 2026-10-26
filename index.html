@@ -1,0 +1,441 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0d18">
+  <meta name="description" content="Luna Calculator — a beautifully crafted calculator with an adorable interactive gray cat mascot.">
+
+  <title>Luna Calculator — Think clearly.</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Existing calculator styles -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!-- Luna mascot styles -->
+  <link rel="stylesheet" href="./css/mascot.css">
+
+  <!-- Existing calculator logic -->
+  <script src="./js/script.js" defer></script>
+
+  <!-- Luna interaction logic -->
+  <script src="./js/mascot.js" defer></script>
+</head>
+
+<body>
+
+  <!-- Ambient background -->
+  <div class="ambient ambient--one" aria-hidden="true"></div>
+  <div class="ambient ambient--two" aria-hidden="true"></div>
+  <div class="ambient ambient--three" aria-hidden="true"></div>
+
+  <main class="layout">
+
+    <!-- =========================
+         INTRO / SIDEBAR
+    ========================== -->
+    <aside class="intro">
+
+      <a class="brand" href="#" aria-label="Luna Calculator home">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <rect x="10" y="5" width="28" height="38" rx="8"
+                  stroke="currentColor" stroke-width="2.4"/>
+            <rect x="15" y="11" width="18" height="7" rx="2.5"
+                  fill="currentColor" opacity=".95"/>
+            <path d="M17 25h2m10 0h2M17 32h2m10 0h2M24 24v9"
+                  stroke="currentColor" stroke-width="3"
+                  stroke-linecap="round"/>
+          </svg>
+        </span>
+
+        <span class="brand__word">Luna<span>.</span></span>
+      </a>
+
+      <p class="intro__tagline">
+        Simple by nature.<br>
+        <span>Brilliant by design.</span>
+      </p>
+
+      <p class="intro__description">
+        A little clarity, a little magic, and a cute companion for your everyday calculations.
+      </p>
+
+      <!-- Features -->
+      <div class="features" aria-label="Calculator features">
+
+        <div class="feature">
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M13.2 2.8 5.5 13h5l-.8 8.2L18.5 10h-5.2l-.1-7.2Z"/>
+            </svg>
+          </span>
+
+          <span>
+            <strong>Instant feedback</strong>
+            <small>Live results as you type</small>
+          </span>
+        </div>
+
+        <div class="feature">
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="5" width="18" height="14" rx="3"/>
+              <path d="M7 9h.01M10 9h.01M13 9h.01M16 9h.01M7 12h.01M10 12h.01M13 12h.01M16 12h.01M8 15h8"/>
+            </svg>
+          </span>
+
+          <span>
+            <strong>Keyboard ready</strong>
+            <small>Keep your hands moving</small>
+          </span>
+        </div>
+
+        <div class="feature">
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/>
+              <path d="M10 18.2h4"/>
+            </svg>
+          </span>
+
+          <span>
+            <strong>Made for every screen</strong>
+            <small>Comfortable on mobile too</small>
+          </span>
+        </div>
+
+        <div class="feature">
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="m12 3 8 3v5.5c0 4.8-3.2 7.8-8 9.5-4.8-1.7-8-4.7-8-9.5V6l8-3Z"/>
+              <path d="m8.7 12 2.1 2.1 4.7-4.7"/>
+            </svg>
+          </span>
+
+          <span>
+            <strong>Thoughtful by default</strong>
+            <small>Accessible and predictable</small>
+          </span>
+        </div>
+
+      </div>
+
+      <!-- Theme and signature -->
+      <div class="intro__bottom">
+
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          type="button"
+          aria-label="Switch to light theme"
+          title="Toggle theme"
+        >
+          <svg class="theme-toggle__sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>
+          </svg>
+
+          <span class="theme-toggle__track">
+            <span></span>
+          </span>
+
+          <svg class="theme-toggle__moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.5 15.2A8.5 8.5 0 0 1 8.8 3.5 8.6 8.6 0 1 0 20.5 15.2Z"/>
+          </svg>
+        </button>
+
+        <p class="signature">
+          Crafted with <span aria-label="love">♥</span>
+          using HTML, CSS &amp; JavaScript
+        </p>
+
+      </div>
+    </aside>
+
+
+    <!-- =========================
+         CALCULATOR APPLICATION
+    ========================== -->
+    <section class="calculator-shell" aria-label="Calculator application">
+
+      <!-- Window header -->
+      <div class="window-bar" aria-hidden="true">
+
+        <div class="window-dots">
+          <i></i>
+          <i></i>
+          <i></i>
+        </div>
+
+        <span class="window-label">
+          LUNA CALCULATOR <span>·</span> 01
+        </span>
+
+        <span class="status-pill">
+          <i></i> READY
+        </span>
+
+      </div>
+
+
+      <section class="calculator" aria-label="Calculator">
+
+
+        <!-- =========================
+             LUNA MASCOT
+        ========================== -->
+        <section
+          class="luna-section"
+          aria-label="Luna, your calculator companion"
+        >
+
+          <div class="luna-container" id="luna">
+
+            <!-- Speech bubble -->
+            <div
+              class="luna-message"
+              id="luna-message"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              Hi! I'm Luna. Let's calculate together!
+            </div>
+
+            <!-- Cat mascot -->
+            <div
+              class="luna-character"
+              id="luna-character"
+              data-state="idle"
+            >
+
+              <img
+                src="./assets/mascot/luna-idle.png"
+                alt="Luna, an adorable gray cat with white stripes"
+                class="luna-image"
+                id="luna-image"
+                width="160"
+                height="160"
+              >
+
+            </div>
+
+            <p class="luna-caption">
+              <span class="luna-caption__sparkle" aria-hidden="true">✦</span>
+              Your little math companion
+              <span class="luna-caption__sparkle" aria-hidden="true">✦</span>
+            </p>
+
+          </div>
+
+        </section>
+
+
+        <!-- =========================
+             CALCULATOR DISPLAY
+        ========================== -->
+        <div class="display" aria-label="Calculator display">
+
+          <div class="display__top">
+
+            <span class="display__label">
+              YOUR EXPRESSION
+            </span>
+
+            <button
+              class="copy-button"
+              id="copy-result"
+              type="button"
+              title="Copy result"
+              aria-label="Copy current result"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="8" y="8" width="12" height="12" rx="2"/>
+                <path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>
+              </svg>
+            </button>
+
+          </div>
+
+          <div
+            class="display__expression"
+            id="expression"
+            aria-live="polite"
+          ></div>
+
+          <div class="display__result-row">
+
+            <span class="result-equals" aria-hidden="true">=</span>
+
+            <output
+              class="display__result"
+              id="result"
+              aria-label="Result"
+            >0</output>
+
+          </div>
+
+          <div
+            class="display__message"
+            id="message"
+            role="status"
+            aria-live="polite"
+          >
+            Ready when you are.
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             CALCULATOR KEYPAD
+        ========================== -->
+        <div
+          class="keypad"
+          id="keypad"
+          aria-label="Calculator keys"
+        >
+
+          <!-- Utility row -->
+          <button
+            class="key key--utility"
+            data-action="clear"
+            type="button"
+            aria-label="Clear all"
+          >AC</button>
+
+          <button
+            class="key key--utility"
+            data-action="delete"
+            type="button"
+            aria-label="Delete last character"
+          >DEL</button>
+
+          <button
+            class="key key--utility"
+            data-action="percent"
+            type="button"
+            aria-label="Percent"
+          >%</button>
+
+          <button
+            class="key key--operator"
+            data-operator="/"
+            type="button"
+            aria-label="Divide"
+          >÷</button>
+
+
+          <!-- Number row 1 -->
+          <button class="key" data-digit="7" type="button">7</button>
+          <button class="key" data-digit="8" type="button">8</button>
+          <button class="key" data-digit="9" type="button">9</button>
+
+          <button
+            class="key key--operator"
+            data-operator="*"
+            type="button"
+            aria-label="Multiply"
+          >×</button>
+
+
+          <!-- Number row 2 -->
+          <button class="key" data-digit="4" type="button">4</button>
+          <button class="key" data-digit="5" type="button">5</button>
+          <button class="key" data-digit="6" type="button">6</button>
+
+          <button
+            class="key key--operator"
+            data-operator="-"
+            type="button"
+            aria-label="Subtract"
+          >−</button>
+
+
+          <!-- Number row 3 -->
+          <button class="key" data-digit="1" type="button">1</button>
+          <button class="key" data-digit="2" type="button">2</button>
+          <button class="key" data-digit="3" type="button">3</button>
+
+          <button
+            class="key key--operator"
+            data-operator="+"
+            type="button"
+            aria-label="Add"
+          >+</button>
+
+
+          <!-- Bottom row -->
+          <button
+            class="key key--utility key--sign"
+            data-action="sign"
+            type="button"
+            aria-label="Change sign"
+          >±</button>
+
+          <button class="key" data-digit="0" type="button">0</button>
+
+          <button
+            class="key"
+            data-action="decimal"
+            type="button"
+            aria-label="Decimal point"
+          >.</button>
+
+          <button
+            class="key key--equals"
+            data-action="equals"
+            type="button"
+            aria-label="Calculate result"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 9h14M5 15h14"/>
+            </svg>
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- =========================
+           CALCULATOR FOOTER
+      ========================== -->
+      <footer class="calculator-footer">
+
+        <span><kbd>Enter</kbd> calculate</span>
+
+        <span class="footer-separator" aria-hidden="true">·</span>
+
+        <span><kbd>Esc</kbd> clear</span>
+
+        <span class="footer-spacer"></span>
+
+        <span class="precision-note">
+          Precision, without the fuss.
+        </span>
+
+      </footer>
+
+    </section>
+
+  </main>
+
+
+  <!-- Toast notifications -->
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+</body>
+</html>
+

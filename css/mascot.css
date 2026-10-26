@@ -1,0 +1,136 @@
+/* Luna mascot container */
+.luna-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 12px auto;
+    z-index: 2;
+}
+
+/* Luna's speech bubble */
+.luna-message {
+    max-width: 220px;
+    padding: 9px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 16px 16px 16px 5px;
+    background: rgba(255, 255, 255, 0.8);
+    color: #62596f;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    box-shadow: 0 5px 18px rgba(70, 60, 90, 0.08);
+    backdrop-filter: blur(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Character */
+.luna-character {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center bottom;
+    animation: luna-float 3s ease-in-out infinite;
+}
+
+.luna-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 10px rgba(70, 60, 90, 0.12));
+}
+
+/* Floating animation */
+@keyframes luna-float {
+    0%, 100% {
+        transform: translateY(0) rotate(-2deg);
+    }
+
+    50% {
+        transform: translateY(-7px) rotate(2deg);
+    }
+}
+
+/* Happy reaction */
+.luna-character.is-happy {
+    animation: luna-happy 0.55s ease-in-out;
+}
+
+@keyframes luna-happy {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+
+    35% {
+        transform: translateY(-15px) scale(1.08) rotate(-5deg);
+    }
+
+    65% {
+        transform: translateY(-5px) scale(1.04) rotate(5deg);
+    }
+}
+
+/* Surprised reaction */
+.luna-character.is-surprised {
+    animation: luna-surprised 0.4s ease-in-out;
+}
+
+@keyframes luna-surprised {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(1.12) rotate(4deg);
+    }
+
+    70% {
+        transform: scale(0.96) rotate(-3deg);
+    }
+}
+
+/* Thinking reaction */
+.luna-character.is-thinking {
+    animation: luna-thinking 1s ease-in-out infinite;
+}
+
+@keyframes luna-thinking {
+    0%, 100% {
+        transform: rotate(0);
+    }
+
+    50% {
+        transform: rotate(-5deg) translateY(-3px);
+    }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .luna-character,
+    .luna-character.is-happy,
+    .luna-character.is-surprised,
+    .luna-character.is-thinking {
+        animation: none;
+    }
+
+    .luna-message {
+        transition: none;
+    }
+}
+
+/* Responsive sizing */
+@media (max-width: 480px) {
+    .luna-character {
+        width: 90px;
+        height: 90px;
+    }
+
+    .luna-message {
+        font-size: 11px;
+        max-width: 190px;
+    }
+}
